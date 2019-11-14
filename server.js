@@ -9,6 +9,9 @@ const app = express();
 
 app.set('secretKey', 'nodeRestApi');
 
+mongoose.connection.once('open', _ => {
+    console.log('Database connected:')
+  })
 mongoose.connection.on('error', console.error.bind(console, 'MongoDB connection error:'));
 
 app.use(logger('dev'));
@@ -26,15 +29,17 @@ app.get('/favicon.ico', (req, res) => {
     res.sendStatus(204);
 });
 
-const validateUser = (req, res, next) => {
-    jwt.verify(req.headers['x-access-token'], req.app.get('secretKey'), (err, decoded) => {
-        if(err) {
-            res.json({status: "error", message: err.message, data:null})
-        } else {
-            req.body.userId = decoded.id;
-            next();
-        }
+function validateUser(req, res, next) {
+    jwt.verify(req.headers['x-access-token'], req.app.get('secretKey'), function(err, decoded) {
+      if (err) {
+        res.json({status:"error", message: err.message, data:null});
+      }else{
+        // add user id to request
+        req.body.userId = decoded.id;
+        next();
+      }
     });
+    
 }
 
 app.use((req, res, next) => {
